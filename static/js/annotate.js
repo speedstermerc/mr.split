@@ -27,33 +27,31 @@ document.addEventListener('DOMContentLoaded', function () {
     function goToNextLine() {
         if (!activeLineId || lineIds.length === 0) return;
 
-        // Get selected user names from Choices.js
-        const selectedUsers = choices.getValue(true); // returns array of selected values (names)
+        const selectedUsers = choices.getValue(true);
 
-        // Send POST request to server with line_id and user_names
+        nextBtn.disabled = true;
+        nextBtn.textContent = "Saving...";
+
         fetch('/annotate/save-responsibility', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                line_id: activeLineId,
-                user_names: selectedUsers
-            })
-        }).then(response => response.json())
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ line_id: activeLineId, user_names: selectedUsers })
+        })
+        .then(response => response.json())
         .then(data => {
             if (data.status === "success") {
-                // Proceed to next line after successful save
+                // move to next item as before
                 const currentIndex = lineIds.indexOf(activeLineId);
                 let nextIndex = currentIndex + 1;
 
                 if (nextIndex >= lineIds.length) {
                     alert('Reached the last item!');
+                    nextBtn.disabled = false;
+                    nextBtn.textContent = "Next Item";
                     return;
                 }
 
                 const nextLineId = lineIds[nextIndex];
-
                 const url = new URL(window.location.href);
                 url.searchParams.set('active_line_id', nextLineId);
                 if (receiptId) {
@@ -62,12 +60,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 window.location.href = url.toString();
             } else {
                 alert('Failed to save responsibility mapping. Please try again.');
+                nextBtn.disabled = false;
+                nextBtn.textContent = "Next Item";
             }
-        }).catch(err => {
+        })
+        .catch(err => {
             alert('Error saving responsibility mapping. Please try again.');
             console.error(err);
+            nextBtn.disabled = false;
+            nextBtn.textContent = "Next Item";
         });
     }
+
 
 
     nextBtn.addEventListener('click', goToNextLine);
