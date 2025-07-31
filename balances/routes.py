@@ -1,6 +1,5 @@
 from flask import Blueprint, render_template
 from app import client
-from collections import defaultdict
 
 balances_bp = Blueprint('balances', __name__, url_prefix='/balances')
 
@@ -14,35 +13,26 @@ def show_balance_summary():
     purchased_items = list(client.ontology.objects.PurchasedItem.iterate())
     line_id_to_item = {item.line_id: item for item in purchased_items if item.line_id}
 
-    grouped = defaultdict(lambda: {
-        "line_id": None,
-        "receipt_id": None,
-        "item_name": None,
-        "price": None,
-        "user_names": set(),
-        "status": None,
-        "paid_by": None  # Added paid_by here
-    })
+    mappings_expanded = []
 
     for mapping in responsibility_mappings:
-        item = line_id_to_item.get(mapping.line_id, None)
+        item = line_id_to_item.get(mapping.line_id)
         if not item:
             continue
 
-        group = grouped[mapping.line_id]
-        group["line_id"] = mapping.line_id
-        group["receipt_id"] = item.receipt_id
-        group["item_name"] = item.item_name
-        group["price"] = item.price
-        group["status"] = mapping.status  # Assumes same status for all user mappings on the same line
-        group["paid_by"] = user_id_to_name.get(item.paid_by, f"User ID {item.paid_by}")  # Map paid_by user id to name
         user_name = user_id_to_name.get(mapping.user_id, f"User ID {mapping.user_id}")
-        group["user_names"].add(user_name)
+        paid_by_name = user_id_to_name.get(item.paid_by, f"User ID {item.paid_by}")
 
-    # Convert user_names from set to sorted list or comma-separated string
-    for group in grouped.values():
-        group["user_names"] = ", ".join(sorted(group["user_names"]))
+        mappings_expanded.append({
+            "line_id": mapping.line_id,
+            "receipt_id": item.receipt_id,
+            "item_name": item.item_name,
+            "price": item.price,
+            "user_name": user_name,
+            "status": mapping.status,
+            "paid_by": paid_by_name
+        })
 
-    mappings_expanded = list(grouped.values())
+    mappings_expanded.sort(key=lambda x: x["line_id"])
 
     return render_template("balances.html", mappings=mappings_expanded)

@@ -24,17 +24,18 @@
     </style>
 </head>
 <body>
+    <a href="{{ url_for('home.home') }}">← Back to Home</a>
     <h1>Responsibility Mappings Summary</h1>
     <table>
         <thead>
             <tr>
-                <th>Line ID</th>
-                <th>Receipt ID</th>
-                <th>Item Name</th>
-                <th>Price</th>
-                <th>Paid By</th>
-                <th>User Name</th>
-                <th>Status</th>
+            <th>Line ID</th>
+            <th>Receipt ID</th>
+            <th>Item Name</th>
+            <th>Price</th>
+            <th>Responsible User</th>
+            <th>Status</th>
+            <th>Paid By</th>
             </tr>
         </thead>
         <tbody>
@@ -44,13 +45,13 @@
                 <td>{{ mapping.receipt_id }}</td>
                 <td>{{ mapping.item_name }}</td>
                 <td>{{ mapping.price }}</td>
-                <td>{{ mapping.paid_by }}</td>
-                <td>{{ mapping.user_names }}</td>
+                <td>{{ mapping.user_name }}</td>
                 <td>{{ mapping.status }}</td>
+                <td>{{ mapping.paid_by }}</td>
             </tr>
             {% endfor %}
         </tbody>
-
     </table>
+
 </body>
 </html>

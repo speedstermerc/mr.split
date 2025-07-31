@@ -8,7 +8,6 @@ auth = UserTokenAuth(token=os.environ["FOUNDRY_TOKEN"])
 client = FoundryClient(auth=auth, hostname="https://roshan-built-this.usw-18.palantirfoundry.com")
 
 
-
 def create_app():
     app = Flask(__name__)
     app.secret_key = "asdf"  # Use a strong secret in production
@@ -23,7 +22,14 @@ def create_app():
     from balances.routes import balances_bp
     app.register_blueprint(balances_bp)
 
+    from home.routes import home_bp
+    app.register_blueprint(home_bp)
+
     return app
+
+
+
+
 
 if __name__ == "__main__":
     app = create_app()

@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
 </head>
 <body data-active-line-id="{{ active_line_id | default('null') }}" data-selected-receipt="{{ selected_receipt }}">
+    <a href="{{ url_for('home.home') }}">← Back to Home</a>
     <h1>All Purchased Items</h1>
 
     <div class="container">

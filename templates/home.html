@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Mr. Split Home</title>
+</head>
+<body>
+    <h1>Welcome to Mr. Split</h1>
+    <ul>
+        <li><a href="{{ url_for('users.list_users') }}">Users</a></li>
+        <li><a href="{{ url_for('annotate.list_items') }}">Purchased Items</a></li>
+        <li><a href="{{ url_for('balances.show_balance_summary') }}">Balances</a></li>
+    </ul>
+</body>
+</html>
