@@ -1,32 +1,36 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Users List</title>
+    <meta charset="UTF-8" />
+    <title>Users - Mr. Split</title>
     <style>
-        table {
-            border-collapse: collapse;
-            width: 80%;
-            margin: 20px auto;
-        }
-        th, td {
-            border: 1px solid #999;
-            padding: 8px 12px;
-            text-align: left;
-        }
-        th {
-            background-color: #eee;
-        }
+        /* Simple styling */
+        table { border-collapse: collapse; width: 80%; margin: 20px auto; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background-color: #eee; }
+        form { width: 80%; margin: 20px auto; }
+        label { display: block; margin-top: 10px; }
+        input[type="text"], input[type="email"] { width: 100%; padding: 6px; margin-top: 4px; }
+        button { margin-top: 10px; padding: 8px 16px; }
+        .flash { width: 80%; margin: 10px auto; padding: 10px; border-radius: 4px; }
+        .error { background-color: #fdd; border: 1px solid #f99; }
+        .success { background-color: #dfd; border: 1px solid #9f9; }
     </style>
 </head>
 <body>
-    <h1 style="text-align:center;">Users</h1>
+    <h1>Users</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
     <table>
         <thead>
-            <tr>
-                <th>User ID</th>
-                <th>Full Name</th>
-                <th>Email</th>
-            </tr>
+            <tr><th>User ID</th><th>Full Name</th><th>Email</th></tr>
         </thead>
         <tbody>
             {% for user in users %}
@@ -38,5 +42,25 @@
             {% endfor %}
         </tbody>
     </table>
+
+    <form method="POST" action="{{ url_for('users.add_users') }}">
+        <h2>Add New User</h2>
+        <label for="full_name">Full Name:</label>
+        <input type="text" name="full_name" id="full_name" required />
+
+        <label for="email">Email:</label>
+        <input type="email" name="email" id="email" required />
+
+        <button type="submit">Add User</button>
+    </form>
+
+    <form method="POST" action="{{ url_for('users.delete_user') }}">
+        <h2>Delete User</h2>
+        <label for="delete_user_id">User ID:</label>
+        <input type="text" name="delete_user_id" id="delete_user_id" required />
+
+        <button type="submit">Delete User</button>
+    </form>
+
 </body>
 </html>

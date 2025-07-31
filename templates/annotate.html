@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Purchased Items</title>
+    <style>
+        /* Table styles */
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .active-row {
+            background-color: #ffff99;  /* light yellow highlight */
+        }
+
+        /* Layout styles */
+        .container {
+            display: flex;
+            justify-content: center;
+            gap: 40px; /* space between left and right */
+            width: 90%;
+            margin: 20px auto;
+            align-items: flex-start;
+        }
+        .left-side {
+            flex: 2; /* table takes more space */
+            min-width: 300px;
+        }
+        .right-side {
+            flex: 1; /* controls take less space */
+            min-width: 250px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        /* Form labels and inputs */
+        form label, label {
+            font-weight: bold;
+            margin-bottom: 6px;
+            display: block;
+        }
+        select, button {
+            padding: 8px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        button {
+            cursor: pointer;
+        }
+    </style>
+
+    <!-- Choices.js CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+</head>
+<body>
+    <h1>All Purchased Items</h1>
+
+    <div class="container">
+        <div class="left-side">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Line ID</th>
+                        <th>Receipt ID</th>
+                        <th>Store Name</th>
+                        <th>Purchase Date</th>
+                        <th>Item Name</th>
+                        <th>Price</th>
+                        <th>Paid By (User ID)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr {% if item.line_id == active_line_id %}class="active-row"{% endif %}>
+                        <td>{{ item.line_id }}</td>
+                        <td>{{ item.receipt_id }}</td>
+                        <td>{{ item.store_name }}</td>
+                        <td>{{ item.purchase_date }}</td>
+                        <td>{{ item.item_name }}</td>
+                        <td>{{ item.price }}</td>
+                        <td>{{ item.paid_by }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="right-side">
+            <form method="GET" action="{{ url_for('annotate.list_items') }}">
+                <label for="receipt-select">Filter by Receipt ID:</label>
+                <select id="receipt-select" name="receipt_id" onchange="this.form.submit()">
+                    <option value="">-- All Receipts --</option>
+                    {% for rid in receipt_ids %}
+                        <option value="{{ rid }}" {% if rid == selected_receipt %}selected{% endif %}>{{ rid }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+
+            <label for="responsible-users">Assign Responsible Users:</label>
+            <select id="responsible-users" name="responsible_users[]" multiple>
+                {% for name in user_names %}
+                    <option value="{{ name }}">{{ name }}</option>
+                {% endfor %}
+            </select>
+
+            <button id="next-btn">Next Item</button>
+        </div>
+    </div>
+
+    <!-- Choices.js JS -->
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize Choices.js for multi-select user assignment
+            const element = document.getElementById('responsible-users');
+            const choices = new Choices(element, {
+                removeItemButton: true,
+                searchEnabled: true,
+                maxItemCount: 10,
+                placeholderValue: 'Type or select responsible users',
+                searchPlaceholderValue: 'Type to search...',
+                shouldSort: true
+            });
+
+            // Active row navigation logic
+            const nextBtn = document.getElementById('next-btn');
+            const activeLineId = {{ active_line_id | default('null') }};
+            const receiptId = "{{ selected_receipt }}";
+            const lineIds = [{% for item in items %}{{ item.line_id }},{% endfor %}];  // array of line_ids
+
+            function goToNextLine() {
+                if (!activeLineId || lineIds.length === 0) return;
+
+                const currentIndex = lineIds.indexOf(activeLineId);
+                let nextIndex = currentIndex + 1;
+
+                if (nextIndex >= lineIds.length) {
+                    alert('Reached the last item!');
+                    return;
+                }
+
+                const nextLineId = lineIds[nextIndex];
+
+                // Reload page with updated active_line_id
+                const url = new URL(window.location.href);
+                url.searchParams.set('active_line_id', nextLineId);
+                if (receiptId) {
+                    url.searchParams.set('receipt_id', receiptId);
+                }
+                window.location.href = url.toString();
+            }
+
+            nextBtn.addEventListener('click', goToNextLine);
+        });
+    </script>
+</body>
+</html>
