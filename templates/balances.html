@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Responsibility Mappings - Balances</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 90%;
+            margin: 20px auto;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #eee;
+        }
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Responsibility Mappings Summary</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Line ID</th>
+                <th>Receipt ID</th>
+                <th>Item Name</th>
+                <th>Price</th>
+                <th>Paid By</th>
+                <th>User Name</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for mapping in mappings %}
+            <tr>
+                <td>{{ mapping.line_id }}</td>
+                <td>{{ mapping.receipt_id }}</td>
+                <td>{{ mapping.item_name }}</td>
+                <td>{{ mapping.price }}</td>
+                <td>{{ mapping.paid_by }}</td>
+                <td>{{ mapping.user_names }}</td>
+                <td>{{ mapping.status }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+
+    </table>
+</body>
+</html>

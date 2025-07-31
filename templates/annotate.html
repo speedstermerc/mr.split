@@ -3,71 +3,10 @@
 <head>
     <meta charset="UTF-8" />
     <title>Purchased Items</title>
-    <style>
-        /* Table styles */
-        table {
-            border-collapse: collapse;
-            width: 100%;
-        }
-        th, td {
-            border: 1px solid #ccc;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        h1 {
-            text-align: center;
-            margin-top: 20px;
-        }
-        .active-row {
-            background-color: #ffff99;  /* light yellow highlight */
-        }
-
-        /* Layout styles */
-        .container {
-            display: flex;
-            justify-content: center;
-            gap: 40px; /* space between left and right */
-            width: 90%;
-            margin: 20px auto;
-            align-items: flex-start;
-        }
-        .left-side {
-            flex: 2; /* table takes more space */
-            min-width: 300px;
-        }
-        .right-side {
-            flex: 1; /* controls take less space */
-            min-width: 250px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-        /* Form labels and inputs */
-        form label, label {
-            font-weight: bold;
-            margin-bottom: 6px;
-            display: block;
-        }
-        select, button {
-            padding: 8px;
-            width: 100%;
-            box-sizing: border-box;
-        }
-        button {
-            cursor: pointer;
-        }
-        #next-btn {
-            margin-top: 300px; /* add vertical space above the button */
-        }
-    </style>
-
-    <!-- Choices.js CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/annotate.css') }}" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
 </head>
-<body>
+<body data-active-line-id="{{ active_line_id | default('null') }}" data-selected-receipt="{{ selected_receipt }}">
     <h1>All Purchased Items</h1>
 
     <div class="container">
@@ -122,54 +61,7 @@
         </div>
     </div>
 
-    <!-- Choices.js JS -->
     <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Initialize Choices.js for multi-select user assignment
-            const element = document.getElementById('responsible-users');
-            const choices = new Choices(element, {
-                removeItemButton: true,
-                searchEnabled: true,
-                maxItemCount: 10,
-                placeholderValue: 'Type or select responsible users',
-                searchPlaceholderValue: 'Type to search...',
-                shouldSort: true
-            });
-
-            choices.input.focus();
-
-            // Active row navigation logic
-            const nextBtn = document.getElementById('next-btn');
-            const activeLineId = {{ active_line_id | default('null') }};
-            const receiptId = "{{ selected_receipt }}";
-            const lineIds = [{% for item in items %}{{ item.line_id }},{% endfor %}];  // array of line_ids
-
-            function goToNextLine() {
-                if (!activeLineId || lineIds.length === 0) return;
-
-                const currentIndex = lineIds.indexOf(activeLineId);
-                let nextIndex = currentIndex + 1;
-
-                if (nextIndex >= lineIds.length) {
-                    alert('Reached the last item!');
-                    return;
-                }
-
-                const nextLineId = lineIds[nextIndex];
-
-                // Reload page with updated active_line_id
-                const url = new URL(window.location.href);
-                url.searchParams.set('active_line_id', nextLineId);
-                if (receiptId) {
-                    url.searchParams.set('receipt_id', receiptId);
-                }
-                window.location.href = url.toString();
-            }
-
-            nextBtn.addEventListener('click', goToNextLine);
-        });
-    </script>
+    <script src="{{ url_for('static', filename='js/annotate.js') }}"></script>
 </body>
 </html>
