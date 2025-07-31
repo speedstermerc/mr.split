@@ -2,7 +2,9 @@ from flask import Blueprint, render_template, request, jsonify
 from app import client
 from .utils import new_mapping_id
 from foundry_sdk_runtime.types import BatchActionConfig, ReturnEditsMode
-from mr_split_sdk.ontology.action_types import CreateResponsibilityMappingBatchRequest
+from mr_split_sdk.ontology.action_types import CreateResponsibilityMappingBatchRequest, DeleteResponsibilityMappingBatchRequest
+from typing import Iterator
+from mr_split_sdk.ontology.objects import ResponsibilityMapping
 
 annotate_bp = Blueprint('annotate', __name__, url_prefix='/annotate')
 
@@ -83,6 +85,29 @@ def save_responsibility():
     # existing_mappings = list(client.ontology.objects.ResponsibilityMapping.iterate())
     # existing_ids = [mapping.mapping_id for mapping in existing_mappings if mapping.mapping_id is not None]
     # max_mapping_id = max(existing_ids) if existing_ids else 0
+
+    mappings_for_line = list(
+        client.ontology.objects.ResponsibilityMapping.where(
+            ResponsibilityMapping.object_type.line_id==line_id
+        ).iterate()
+    )
+
+    mapping_ids = {mapping.mapping_id for mapping in mappings_for_line if mapping.mapping_id is not None}
+
+    delete_requests = []
+    for mapping_id in mapping_ids:
+        delete_requests.append(
+            DeleteResponsibilityMappingBatchRequest(
+                responsibility_mapping=mapping_id
+            )
+        )
+
+    delete_response = client.ontology.batch_actions.delete_responsibility_mapping(
+        batch_action_config=BatchActionConfig(return_edits=ReturnEditsMode.ALL),
+        requests=delete_requests
+    )
+    print(delete_response.edits)
+
 
     # Prepare batch requests for each user_id
     batch_requests = []
