@@ -1,4 +1,4 @@
-user_id,costco_membership_id,full_name,email
-1,ACME12345,Brianna Zhang,brianna@example.com
-2,ACME67890,Roshan Saigal,roshan@example.com
-3,ACME54321,Alan Tian,alan@example.com
+user_id,full_name,email
+1,Brianna Zhang,brianna@example.com
+2,Roshan Saigal,roshan@example.com
+3,Alan Tian,alan@example.com
