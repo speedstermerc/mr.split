@@ -58,6 +58,55 @@
         </tbody>
     </table>
 
+    <h2 style="text-align:center;margin-top:40px;">Pairwise Debts</h2>
+    <table>
+    <thead>
+        <tr>
+        <th>From</th>
+        <th>To</th>
+        <th>Amount</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% if pairwise and pairwise|length > 0 %}
+        {% for row in pairwise %}
+            <tr>
+            <td>{{ row.from }}</td>
+            <td>{{ row.to }}</td>
+            <td>{{ row.amount }}</td>
+            </tr>
+        {% endfor %}
+        {% else %}
+        <tr><td colspan="3">Nothing owed between users.</td></tr>
+        {% endif %}
+    </tbody>
+    </table>
+
+    <h2 style="text-align:center;margin-top:40px;">Per-User Net</h2>
+    <table>
+    <thead>
+        <tr>
+        <th>User</th>
+        <th>Net</th>
+        <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% if per_user and per_user|length > 0 %}
+        {% for row in per_user %}
+            <tr>
+            <td>{{ row.user }}</td>
+            <td>{{ row.net }}</td>
+            <td>{{ row.status }}</td>
+            </tr>
+        {% endfor %}
+        {% else %}
+        <tr><td colspan="3">No balances to show.</td></tr>
+        {% endif %}
+    </tbody>
+    </table>
+
+
     <script>
       function verifyDelete() {
         const msg = "This will permanently delete ALL responsibility mappings.\n\n" +
