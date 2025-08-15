@@ -1,0 +1,2 @@
+settlement_id,from_user_id,to_user_id,amount_cents,created_at,note
+1,3,4,2500,2025-08-15,"Paid for last week's Costco run"

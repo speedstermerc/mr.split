@@ -30,7 +30,13 @@
         <button type="submit" class="danger-btn">Delete All Mappings</button>
       </form>
     </div>
-
+    <!-- Delete All Settlements Button (requires typing DELETE) -->
+    <div class="actions">
+      <form action="{{ url_for('balances.delete_all_settlements') }}" method="post" onsubmit="return verifyDeleteSettlements();">
+        <input type="hidden" name="confirm_text" id="confirm_text_settlements" value="">
+        <button type="submit" class="danger-btn">Delete All Settlements</button>
+      </form>
+    </div>
     <table>
         <thead>
             <tr>
@@ -39,7 +45,6 @@
                 <th>Item Name</th>
                 <th>Price</th>
                 <th>Responsible User</th>
-                <th>Status</th>
                 <th>Paid By</th>
             </tr>
         </thead>
@@ -51,61 +56,72 @@
                 <td>{{ mapping.item_name }}</td>
                 <td>{{ mapping.price }}</td>
                 <td>{{ mapping.user_name }}</td>
-                <td>{{ mapping.status }}</td>
                 <td>{{ mapping.paid_by }}</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 
+
+    <!-- UPDATED: Pairwise Debts with Resolve action -->
     <h2 style="text-align:center;margin-top:40px;">Pairwise Debts</h2>
     <table>
-    <thead>
+      <thead>
         <tr>
-        <th>From</th>
-        <th>To</th>
-        <th>Amount</th>
+          <th>From</th>
+          <th>To</th>
+          <th>Amount</th>
+          <th>Action</th>
         </tr>
-    </thead>
-    <tbody>
+      </thead>
+      <tbody>
         {% if pairwise and pairwise|length > 0 %}
-        {% for row in pairwise %}
+          {% for row in pairwise %}
             <tr>
-            <td>{{ row.from }}</td>
-            <td>{{ row.to }}</td>
-            <td>{{ row.amount }}</td>
+              <td>{{ row.from }}</td>
+              <td>{{ row.to }}</td>
+              <td>{{ row.amount }}</td>
+              <td>
+                <form action="{{ url_for('balances.settle_debt') }}" method="post" onsubmit="return confirmSettle(this);">
+                  <!-- If you use CSRF protection, include your token here -->
+                  <input type="hidden" name="from_user_id" value="{{ row.from_id }}">
+                  <input type="hidden" name="to_user_id"   value="{{ row.to_id }}">
+                  <input type="hidden" name="amount_cents" value="{{ row.amount_cents }}">
+                  <input type="hidden" name="confirm_text" value="">
+                  <button type="submit">Resolve</button>
+                </form>
+              </td>
             </tr>
-        {% endfor %}
+          {% endfor %}
         {% else %}
-        <tr><td colspan="3">Nothing owed between users.</td></tr>
+          <tr><td colspan="4">Nothing owed between users.</td></tr>
         {% endif %}
-    </tbody>
+      </tbody>
     </table>
 
     <h2 style="text-align:center;margin-top:40px;">Per-User Net</h2>
     <table>
-    <thead>
+      <thead>
         <tr>
-        <th>User</th>
-        <th>Net</th>
-        <th>Status</th>
+          <th>User</th>
+          <th>Net</th>
+          <th>Status</th>
         </tr>
-    </thead>
-    <tbody>
+      </thead>
+      <tbody>
         {% if per_user and per_user|length > 0 %}
-        {% for row in per_user %}
+          {% for row in per_user %}
             <tr>
-            <td>{{ row.user }}</td>
-            <td>{{ row.net }}</td>
-            <td>{{ row.status }}</td>
+              <td>{{ row.user }}</td>
+              <td>{{ row.net }}</td>
+              <td>{{ row.status }}</td>
             </tr>
-        {% endfor %}
+          {% endfor %}
         {% else %}
-        <tr><td colspan="3">No balances to show.</td></tr>
+          <tr><td colspan="3">No balances to show.</td></tr>
         {% endif %}
-    </tbody>
+      </tbody>
     </table>
-
 
     <script>
       function verifyDelete() {
@@ -114,8 +130,35 @@
         const input = prompt(msg);
         if (input === "DELETE") {
           document.getElementById("confirm_text").value = "DELETE";
-          // Optional: prevent double-click resubmits
           const btn = document.querySelector(".danger-btn");
+          if (btn) { btn.disabled = true; btn.textContent = "Deleting..."; }
+          return true;
+        }
+        alert("Deletion cancelled.");
+        return false;
+      }
+
+      // NEW: confirm settlement prompt for Resolve button
+      function confirmSettle(formEl) {
+        const msg = "This will record a payment and remove this debt from balances.\n\n" +
+                    "Type CONFIRM (ALL CAPS) to proceed:";
+        const input = prompt(msg);
+        if (input === "CONFIRM") {
+          formEl.querySelector('input[name="confirm_text"]').value = "CONFIRM";
+          const btn = formEl.querySelector('button[type="submit"]');
+          if (btn) { btn.disabled = true; btn.textContent = "Resolving..."; }
+          return true;
+        }
+        alert("Settlement cancelled.");
+        return false;
+      }
+      function verifyDeleteSettlements() {
+        const msg = "This will permanently delete ALL settlements.\n\n" +
+                    "To confirm, type DELETE (in ALL CAPS):";
+        const input = prompt(msg);
+        if (input === "DELETE") {
+          document.getElementById("confirm_text_settlements").value = "DELETE";
+          const btn = document.querySelectorAll(".danger-btn")[1]; // second red button
           if (btn) { btn.disabled = true; btn.textContent = "Deleting..."; }
           return true;
         }

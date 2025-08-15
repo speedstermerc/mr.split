@@ -25,6 +25,9 @@ def create_app():
     from home.routes import home_bp
     app.register_blueprint(home_bp)
 
+    from line_items.routes import line_items_bp
+    app.register_blueprint(line_items_bp)
+
     return app
 
 

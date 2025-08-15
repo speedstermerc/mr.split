@@ -1,8 +1,10 @@
 from flask import Blueprint, render_template, redirect, url_for, request
 from app import client
-from foundry_sdk_runtime.types import BatchActionConfig, ReturnEditsMode
-from mr_split_sdk.ontology.action_types import DeleteResponsibilityMappingBatchRequest
-from balances.utils import compute_balances
+from foundry_sdk_runtime.types import BatchActionConfig, ReturnEditsMode, ActionConfig, ActionMode, SyncApplyActionResponse
+from mr_split_sdk.ontology.action_types import DeleteResponsibilityMappingBatchRequest, DeleteSettlementsBatchRequest
+from balances.utils import compute_balances, new_settlement_id
+from datetime import date
+
 
 balances_bp = Blueprint('balances', __name__, url_prefix='/balances')
 
@@ -35,14 +37,20 @@ def show_balance_summary():
     mappings_expanded.sort(key=lambda x: x["line_id"])
 
     # --- NEW: compute balances ---
-    pairwise, per_user = compute_balances(responsibility_mappings, purchased_items)
+    # pairwise, per_user = compute_balances(responsibility_mappings, purchased_items)
+
+    settlements = list(client.ontology.objects.Settlements.iterate())
+    pairwise, per_user = compute_balances(responsibility_mappings, purchased_items, settlements)
 
     # Convert IDs to names and cents to dollars for display
     def fmt_cents(c): return f"${c/100:.2f}"
 
     pairwise_display = [{
-        "from": user_id_to_name.get(frm, f"User ID {frm}"),
-        "to":   user_id_to_name.get(to,  f"User ID {to}"),
+        "from_id": frm,
+        "to_id":   to,
+        "from":    user_id_to_name.get(frm, f"User ID {frm}"),
+        "to":      user_id_to_name.get(to,  f"User ID {to}"),
+        "amount_cents": amt,
         "amount": fmt_cents(amt),
     } for (frm, to, amt) in pairwise]
 
@@ -82,6 +90,85 @@ def delete_all_mappings():
         ]
         if len(requests) > 0:
             client.ontology.batch_actions.delete_responsibility_mapping(
+                batch_action_config=BatchActionConfig(return_edits=ReturnEditsMode.ALL),
+                requests=requests
+            )
+
+    return redirect(url_for("balances.show_balance_summary"))
+
+
+@balances_bp.route("/settle", methods=["POST"])
+def settle_debt():
+    if request.form.get("confirm_text", "") != "CONFIRM":
+        return redirect(url_for("balances.show_balance_summary",
+                                error="Settlement cancelled. Type CONFIRM to proceed."))
+
+    try:
+        # HTML form posts strings → cast to ints
+        from_user_id = int(request.form["from_user_id"])
+        to_user_id   = int(request.form["to_user_id"])
+        amount_cents = int(request.form.get("amount_cents", "0"))
+        note         = "test"
+
+        if amount_cents <= 0:
+            return redirect(url_for("balances.show_balance_summary",
+                                    error="Invalid settlement amount."))
+
+        created = date.today()
+
+        print("before create_settlements")
+
+        response : SyncApplyActionResponse = client.ontology.actions.create_settlements(
+            action_config=ActionConfig(
+                mode=ActionMode.VALIDATE_AND_EXECUTE,
+                return_edits=ReturnEditsMode.ALL
+            ),
+            settlement_id=new_settlement_id(),  # int PK
+            from_user_id=from_user_id,          # int
+            to_user_id=to_user_id,              # int
+            amount_cents=amount_cents,          # int
+            created_at=created,
+            note=note
+        )
+
+        print(response.validation)
+        # Example Output:
+        # ValidateActionResponse(result='VALID', submission_criteria=[], parameters={})
+
+        if response.validation.result == "VALID":
+            # If ReturnEditsMode.ALL is used, new and updated objects edits will contain the primary key of the object
+            if response.edits.type == "edits":
+                print(response.edits)
+
+        print("after create_settlements")
+
+        return redirect(url_for("balances.show_balance_summary"))
+
+    except ValueError:
+        return redirect(url_for("balances.show_balance_summary",
+                                error="Bad form values for settlement."))
+    except Exception as e:
+        return redirect(url_for("balances.show_balance_summary",
+                                error=f"Failed to record settlement: {e}"))
+
+@balances_bp.route("/delete_all_settlements", methods=["POST"])
+def delete_all_settlements():
+    confirm_text = request.form.get("confirm_text", "")
+    if confirm_text != "DELETE":
+        return redirect(url_for("balances.show_balance_summary",
+                                error="Deletion cancelled. You must type DELETE to confirm."))
+
+    settlements = list(client.ontology.objects.Settlements.iterate())
+
+    if settlements:
+        requests = [
+            DeleteSettlementsBatchRequest(
+                settlements=s.settlement_id  # primary key field
+            )
+            for s in settlements
+        ]
+        if requests:
+            client.ontology.batch_actions.delete_settlements(
                 batch_action_config=BatchActionConfig(return_edits=ReturnEditsMode.ALL),
                 requests=requests
             )

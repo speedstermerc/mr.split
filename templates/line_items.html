@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Line Items - Mr. Split</title>
+    <style>
+        table { border-collapse: collapse; width: 95%; margin: 20px auto; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background-color: #eee; }
+        form { width: 95%; margin: 20px auto; }
+        label { display: block; margin-top: 10px; }
+        input, select { width: 100%; padding: 6px; margin-top: 4px; }
+        button { margin-top: 10px; padding: 8px 16px; }
+        .flash { width: 95%; margin: 10px auto; padding: 10px; border-radius: 4px; }
+        .error { background-color: #fdd; border: 1px solid #f99; }
+        .success { background-color: #dfd; border: 1px solid #9f9; }
+    </style>
+</head>
+<body>
+    <a href="{{ url_for('home.home') }}">← Back to Home</a>
+    <h1>Line Items</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <table>
+        <thead>
+            <tr>
+                <th>Line ID</th>
+                <th>Receipt ID</th>
+                <th>Store Name</th>
+                <th>Purchase Date</th>
+                <th>Item Name</th>
+                <th>Price ($)</th>
+                <th>Paid By (User ID)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.line_id }}</td>
+                <td>{{ item.receipt_id }}</td>
+                <td>{{ item.store_name }}</td>
+                <td>{{ item.purchase_date }}</td>
+                <td>{{ item.item_name }}</td>
+                <td>{{ "%.2f"|format(item.price) }}</td>
+                <td>{{ item.paid_by }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <form method="POST" action="{{ url_for('line_items.add_line_item') }}">
+        <h2>Add New Line Item</h2>
+
+        <label for="receipt_id">Receipt ID:</label>
+        <input type="number" name="receipt_id" id="receipt_id" required />
+
+        <label for="store_name">Store Name:</label>
+        <input type="text" name="store_name" id="store_name" required />
+
+        <label for="purchase_date">Purchase Date (YYYY-MM-DD):</label>
+        <input type="text" name="purchase_date" id="purchase_date" placeholder="YYYY-MM-DD" required />
+
+        <label for="item_name">Item Name:</label>
+        <input type="text" name="item_name" id="item_name" required />
+
+        <label for="price">Price (in dollars):</label>
+        <input type="number" name="price" id="price" min="0" step="0.01" required />
+
+        <label for="paid_by">Paid By (User ID):</label>
+        <input type="number" name="paid_by" id="paid_by" min="1" step="1" required />
+
+        <button type="submit">Add Line Item</button>
+    </form>
+
+    <form method="POST" action="{{ url_for('line_items.delete_line_item') }}">
+        <h2>Delete Line Item</h2>
+        <label for="delete_line_id">Line ID:</label>
+        <input type="number" name="delete_line_id" id="delete_line_id" required />
+        <button type="submit">Delete Line Item</button>
+    </form>
+</body>
+</html>
