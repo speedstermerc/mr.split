@@ -4,38 +4,43 @@
     <meta charset="UTF-8" />
     <title>Responsibility Mappings - Balances</title>
     <style>
-        table {
-            border-collapse: collapse;
-            width: 90%;
-            margin: 20px auto;
-        }
-        th, td {
-            border: 1px solid #ccc;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #eee;
-        }
-        h1 {
-            text-align: center;
-            margin-top: 20px;
-        }
+        table { border-collapse: collapse; width: 90%; margin: 20px auto; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background-color: #eee; }
+        h1 { text-align: center; margin-top: 20px; }
+        .actions { text-align: center; margin: 10px 0 20px; }
+        .danger-btn { background-color: #c62828; color: #fff; padding: 10px 14px; border: none; cursor: pointer; }
+        .danger-btn:hover { opacity: 0.9; }
+        .error { width: 90%; margin: 10px auto; background: #ffe3e3; color: #8b0000; padding: 10px; border: 1px solid #f5c2c2; }
     </style>
 </head>
 <body>
     <a href="{{ url_for('home.home') }}">← Back to Home</a>
     <h1>Responsibility Mappings Summary</h1>
+
+    {% if error %}
+      <div class="error">{{ error }}</div>
+    {% endif %}
+
+    <!-- Delete All Button (requires typing DELETE) -->
+    <div class="actions">
+      <form action="{{ url_for('balances.delete_all_mappings') }}" method="post" onsubmit="return verifyDelete();">
+        <!-- this is filled by JS only if user types DELETE -->
+        <input type="hidden" name="confirm_text" id="confirm_text" value="">
+        <button type="submit" class="danger-btn">Delete All Mappings</button>
+      </form>
+    </div>
+
     <table>
         <thead>
             <tr>
-            <th>Line ID</th>
-            <th>Receipt ID</th>
-            <th>Item Name</th>
-            <th>Price</th>
-            <th>Responsible User</th>
-            <th>Status</th>
-            <th>Paid By</th>
+                <th>Line ID</th>
+                <th>Receipt ID</th>
+                <th>Item Name</th>
+                <th>Price</th>
+                <th>Responsible User</th>
+                <th>Status</th>
+                <th>Paid By</th>
             </tr>
         </thead>
         <tbody>
@@ -53,5 +58,21 @@
         </tbody>
     </table>
 
+    <script>
+      function verifyDelete() {
+        const msg = "This will permanently delete ALL responsibility mappings.\n\n" +
+                    "To confirm, type DELETE (in ALL CAPS):";
+        const input = prompt(msg);
+        if (input === "DELETE") {
+          document.getElementById("confirm_text").value = "DELETE";
+          // Optional: prevent double-click resubmits
+          const btn = document.querySelector(".danger-btn");
+          if (btn) { btn.disabled = true; btn.textContent = "Deleting..."; }
+          return true;
+        }
+        alert("Deletion cancelled.");
+        return false;
+      }
+    </script>
 </body>
 </html>

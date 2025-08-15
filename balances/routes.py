@@ -1,5 +1,7 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, redirect, url_for, request
 from app import client
+from foundry_sdk_runtime.types import BatchActionConfig, ReturnEditsMode
+from mr_split_sdk.ontology.action_types import DeleteResponsibilityMappingBatchRequest
 
 balances_bp = Blueprint('balances', __name__, url_prefix='/balances')
 
@@ -36,3 +38,29 @@ def show_balance_summary():
     mappings_expanded.sort(key=lambda x: x["line_id"])
 
     return render_template("balances.html", mappings=mappings_expanded)
+
+
+@balances_bp.route("/delete_all", methods=["POST"])
+def delete_all_mappings():
+    # Server-side safety: require exact "DELETE" confirmation
+    confirm_text = request.form.get("confirm_text", "")
+    if confirm_text != "DELETE":
+        return redirect(url_for("balances.show_balance_summary",
+                                error="Deletion cancelled. You must type DELETE to confirm."))
+
+    responsibility_mappings = list(client.ontology.objects.ResponsibilityMapping.iterate())
+
+    if responsibility_mappings:
+        requests = [
+            DeleteResponsibilityMappingBatchRequest(
+                responsibility_mapping=mapping.mapping_id  # primary key field
+            )
+            for mapping in responsibility_mappings
+        ]
+        if len(requests) > 0:
+            client.ontology.batch_actions.delete_responsibility_mapping(
+                batch_action_config=BatchActionConfig(return_edits=ReturnEditsMode.ALL),
+                requests=requests
+            )
+
+    return redirect(url_for("balances.show_balance_summary"))
