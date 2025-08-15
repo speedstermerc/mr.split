@@ -1,1 +1,2 @@
 DON't FORGET TO ACTIVATE THE RIGHT CONDA ENVIRONMENT silly
+also, export api keys
