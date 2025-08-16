@@ -3,9 +3,51 @@
 <head>
     <meta charset="UTF-8" />
     <title>Mr. Split Home</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #fafafa;
+            color: #333;
+            text-align: center;
+            margin: 0;
+            padding: 40px;
+        }
+
+        h1 {
+            font-size: 2.2em;
+            margin-bottom: 25px;
+            color: #222;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            margin: 10px 0;
+        }
+
+        a {
+            text-decoration: none;
+            font-size: 1em;          /* slightly smaller text */
+            color: #0073e6;
+            border: 1px solid #0073e6;
+            padding: 6px 14px;       /* smaller padding */
+            border-radius: 5px;
+            transition: all 0.2s ease-in-out;
+            display: inline-block;   /* ensures compact sizing */
+        }
+
+        a:hover {
+            background-color: #0073e6;
+            color: #fff;
+        }
+    </style>
 </head>
 <body>
-    <h1>Welcome to Mr. Split</h1>
+    <h1>Welcome to Mr. $plit</h1>
+    <h3>A quick way to split reciepts.</h3>
     <ul>
         <li><a href="{{ url_for('users.list_users') }}">Add/Remove Users</a></li>
         <li><a href="{{ url_for('line_items.list_line_items') }}">Add/Remove Line Items</a></li>
