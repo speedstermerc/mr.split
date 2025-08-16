@@ -59,74 +59,75 @@ def list_items():
 
 @annotate_bp.route("/save-responsibility", methods=["POST"])
 def save_responsibility():
+    def _to_int(x):
+        try:
+            if isinstance(x, int): return x
+            if isinstance(x, float): return int(x)
+            return int(str(x).strip())
+        except Exception:
+            return None
+
     data = request.get_json()
+    line_id = _to_int(data.get("line_id"))
+    user_names = data.get("user_names")  # List[str]
 
-    line_id = data.get("line_id")
-    user_names = data.get("user_names")  # List of strings
-
-    # Validate input
     if not line_id or not user_names:
         return jsonify({"status": "error", "message": "line_id and user_names are required"}), 400
 
-    # Map user_names to user IDs
-    users_iterator = client.ontology.objects.Users.iterate()
-    users = list(users_iterator)
-    name_to_id = {user.full_name: user.user_id for user in users if user.full_name}
+    # Map names -> IDs
+    users = list(client.ontology.objects.Users.iterate())
+    name_to_id = {u.full_name: u.user_id for u in users if u.full_name is not None}
 
-    user_ids = [name_to_id.get(name) for name in user_names if name in name_to_id]
-
+    user_ids = [_to_int(name_to_id.get(name)) for name in user_names if name in name_to_id]
+    user_ids = [uid for uid in user_ids if uid is not None]
     if not user_ids:
         return jsonify({"status": "error", "message": "No valid user IDs found for given names"}), 400
 
-    # You need to generate unique mapping_ids for each mapping.
-    # For demo purposes, let's generate them based on a simple logic:
-    # e.g., max existing mapping_id + incremental index.
-    # Fetch all existing mappings to find max mapping_id
-    # existing_mappings = list(client.ontology.objects.ResponsibilityMapping.iterate())
-    # existing_ids = [mapping.mapping_id for mapping in existing_mappings if mapping.mapping_id is not None]
-    # max_mapping_id = max(existing_ids) if existing_ids else 0
+    # Load the purchased item to find the payer
+    # (You can also use .where(...) if you prefer)
+    item = next(
+        (it for it in client.ontology.objects.PurchasedItem.iterate() if _to_int(it.line_id) == line_id),
+        None
+    )
+    paid_by = _to_int(getattr(item, "paid_by", None)) if item else None
 
-    mappings_for_line = list(
+    # Delete existing mappings for this line
+    existing = list(
         client.ontology.objects.ResponsibilityMapping.where(
-            ResponsibilityMapping.object_type.line_id==line_id
+            ResponsibilityMapping.object_type.line_id == line_id
         ).iterate()
     )
-
-    mapping_ids = {mapping.mapping_id for mapping in mappings_for_line if mapping.mapping_id is not None}
-
     delete_requests = []
-    for mapping_id in mapping_ids:
-        delete_requests.append(
-            DeleteResponsibilityMappingBatchRequest(
-                responsibility_mapping=mapping_id
+    for rm in existing:
+        if getattr(rm, "mapping_id", None) is not None:
+            delete_requests.append(
+                DeleteResponsibilityMappingBatchRequest(
+                    responsibility_mapping=rm.mapping_id
+                )
             )
+    if delete_requests:
+        client.ontology.batch_actions.delete_responsibility_mapping(
+            batch_action_config=BatchActionConfig(return_edits=ReturnEditsMode.ALL),
+            requests=delete_requests
         )
 
-    delete_response = client.ontology.batch_actions.delete_responsibility_mapping(
-        batch_action_config=BatchActionConfig(return_edits=ReturnEditsMode.ALL),
-        requests=delete_requests
-    )
-    print(delete_response.edits)
-
-
-    # Prepare batch requests for each user_id
+    # Create new mappings; mark as "paid" if user == payer
     batch_requests = []
-    for idx, user_id in enumerate(user_ids, start=0):
+    base_id = new_mapping_id()
+    for idx, uid in enumerate(user_ids):
+        status_val = "paid" if (paid_by is not None and uid == paid_by) else "unpaid"
         batch_requests.append(
             CreateResponsibilityMappingBatchRequest(
-                mapping_id=new_mapping_id() + idx,
+                mapping_id=base_id + idx,
                 line_id=line_id,
-                user_id=user_id,
-                status="unpaid"  # or another default status as per your design
+                user_id=uid,
+                status=status_val
             )
         )
 
-    # Call Foundry batch action to create responsibility mappings
-    response = client.ontology.batch_actions.create_responsibility_mapping(
+    client.ontology.batch_actions.create_responsibility_mapping(
         batch_action_config=BatchActionConfig(return_edits=ReturnEditsMode.ALL),
         requests=batch_requests
     )
-    print(response.edits)
-
 
     return jsonify({"status": "success"})
